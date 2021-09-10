@@ -1,28 +1,32 @@
-﻿using System;
+﻿#region everything
+#region usings
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Reflection;
 using System.IO;
 
 using Modding;
 using MonoMod.RuntimeDetour;
-//using DebugMod;
+using HowwowKnyight.GlobalSettings;
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 using System.Text.RegularExpressions;
 using System.Security;
-using System.Security.Permissions;
+using System.Collections;
+#endregion
 
+#region System
 
 //[assembly: IgnoresAccessChecksTo("Assembly-CSharp")]
 //[assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
-[module: UnverifiableCode]
 
+[module: UnverifiableCode]
 namespace System.Runtime.CompilerServices
 {
+
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     public class IgnoresAccessChecksToAttribute : Attribute
     {
@@ -35,30 +39,73 @@ namespace System.Runtime.CompilerServices
     }
 }
 
+#endregion
+
+#region HowwowKnyight
 
 namespace HowwowKnyight
 {
     /*
-	   Place your code on github text time ok? This looks way better then what I originally did. xD
-	   I'm also going to be adding random comments, just ignore them please. I use them make make my brain not explode.
-	   If you encounter any bug, IDK how to contact the creator, so just contact me: Ruttie#3005 on Discord.
-	   Will I be updating this to 1.5? Idk you'll have to see! :3
-	   (I had no idea what random to use, so i just used unity.)
-       Oh and status update: I found the creator and he gave me this! You can now contact me (@Ruttie#3005) or the creator (@Henpemaz#9262)!
-       I have no idea if he wants to be contacted, so the better option is to contact me (@Ruttie#3005).
-       Yet another status update! I've updated it to 1.5 now, as you can obviously see because you are looking at it!
+	   Pwace yuww code on gifub text time ok? Dis wooks way bettew den what I owiginyawwy did. xD
+       I'm awso going to be adding wandom comments, just ignyowe dem pwease. I use dem make make my bwain nyot expwode.
+       If yuw encuwntew any bug, just contact me: Ruttie#3005 on Discowd! >w<
+       Status update! I've updated it to 1.5 nyow, as yuw can obviuwswy see because yuw awe wooking at it! >w<
 	   ~Ruttie
 	*/
-    public class HowwowKnyight : Mod, ITogglableMod
+
+    public class HowwowKnyight : Mod, ITogglableMod, IGlobalSettings<GlobalSettingsClass>
     {
+
+
         #region SettingStuff
-        static string TitweTexturename = "SpriteAtlasTexture-Title-2048x2048-fmt12.png";
+
+
+
+        #region private
         static string SpwitePath = ".wesuwwces.SpriteAtlasTexture-Title-2048x2048-fmt12.png";
+        static string TitweTexturename = "SpriteAtlasTexture-Title-2048x2048-fmt12.png";
         static readonly string Author = "Henpemaz";
         static readonly string Contributor = "Ruttie";
+        static Sprite titweSpwite;
+        static Sprite owiginawTitweSpwite;
+        static Texture owiginalgwimm;
+        private GameObject grimm;
+        private bool unloaded;
+
+
         private bool enyabwed = false;
-        //bool DebugPresent = true;
+        private Hook wanguageGetHook;
+        Assembly asm = Assembly.GetExecutingAssembly();
+
+        //int[] nums = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; //sry RedFrog
+        //Regex r = new Regex(@"\d", RegexOptions.IgnoreCase); //go SFG
         #endregion
+        #region public
+        public static Coroutine ModifyTitweTextuweRuwtine { get; private set;}
+        public static GlobalSettingsClass settings { get; set; } = new GlobalSettingsClass();
+        public delegate string WanguageGetWef(ModHooks instance, string key, string tabwe);
+        public Dictionary<string, Texture2D> images = new Dictionary<string, Texture2D>();
+        //public HowwowKnyight hk = new HowwowKnyight();
+        public static HowwowKnyight Instance { get; private set; }
+        public bool update;
+        #endregion
+
+        public void OnLoadGlobal(GlobalSettingsClass s)
+        {
+            Modding.Logger.Log("loading globalsettings");
+            settings = s;
+        }
+        public GlobalSettingsClass OnSaveGlobal()
+        {
+            Modding.Logger.Log("saving globalsettings");
+            return settings;
+        }
+
+        #endregion
+
+
+        #region Base and version
+
         public HowwowKnyight() : base("HowwowKnyight") 
         {
             if (!enyabwed)
@@ -69,21 +116,29 @@ namespace HowwowKnyight
             //ModHooks.LanguageGetHook += WanguageGet;
         }
 
-        public override string GetVersion() => "2.8 - 1.5.75";
+        public override string GetVersion() => "3.7.2 - 1.5.75";
 
-        //int[] nums = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; //sry RedFrog
-        //Regex r = new Regex(@"\d", RegexOptions.IgnoreCase); //go SFG
-        private Hook wanguageGetHook;
-        public override void Initialize()
+        #endregion
+
+
+        #region Init/override
+
+        public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects)
         {
             Log("Inyitiawizing UwU");
+
+            unloaded = false;
+            Instance = this;
             #region Hooks
             if (!enyabwed)
             {
                 ModHooks.LanguageGetHook += WanguageGet;
                 enyabwed = true;
             }
+
+            UnityEngine.SceneManagement.SceneManager.activeSceneChanged += SceneChanged;
             #endregion
+
             #region DebugInterCaller
             try
             {
@@ -100,7 +155,7 @@ namespace HowwowKnyight
 				if (debug)
                 {
                     var go = GameObject.Find("DebugEasterEgg");
-                    Log("Debug Exists");
+                    Log("Debug Exists. >w<");
                     if (go != null)
                     {
                         try
@@ -109,75 +164,151 @@ namespace HowwowKnyight
                         }
                         catch (Exception e)
                         {
-                            Log("Not able to match the power of debug");
+                            Log("Nyot abwe to match de powew of debug.");
                             Log(e);
                         }
                     }
                     else
                     {
-                        Log("Debug GO not found");
+                        Log("Debug GO nyot fuwnd");
                         ModifyTitweTextuweRuwtine = GameManager.instance.StartCoroutine(HowwowKnyight.ModifyTitweSpwite());
                     }
                 }
                 else
                 {
-                    Log("No debug in mods loaded");
+                    Log("Nyo debug in mods woaded");
                     ModifyTitweTextuweRuwtine = GameManager.instance.StartCoroutine(HowwowKnyight.ModifyTitweSpwite());
                 }
             }
             catch
             {
                 ModifyTitweTextuweRuwtine = GameManager.instance.StartCoroutine(HowwowKnyight.ModifyTitweSpwite());
-                Log("Debug check failed");
+                Log("Debug check faiwed");
+            }
+            #endregion
+
+            #region Texturestuff
+
+            if (preloadedObjects != null)
+            {
+                grimm = preloadedObjects["GG_Grimm"][@"Grimm Scene/Grimm Boss"];
+            }
+            
+
+            string[] resourceNames = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+
+            foreach (string res in resourceNames)
+            {
+                if (res.StartsWith("HowwowKnyight.wesuwwces."))
+                {
+                    try
+                    {
+                        Stream imageStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(res);
+                        byte[] buffer = new byte[imageStream.Length];
+                        imageStream.Read(buffer, 0, buffer.Length);
+
+                        Texture2D tex = new Texture2D(1, 1);
+                        tex.LoadImage(buffer.ToArray());
+
+                        string[] split = res.Split('.');
+                        string internalName = split[split.Length - 2];
+                        images.Add(internalName, tex);
+
+                        Log("Loaded image: " + internalName);
+                    }
+                    catch (Exception e)
+                    {
+                        Log("Failed to load image: " + res + "\n" + e.ToString());
+                    }
+                }
             }
             #endregion
             Log("Done inyitiawizing UwU");
             Log("Mwade bwy: " + Author + ", and fyixed annoying softlock bwy: " + Contributor + ". Enjoy :3 ~Ruttie");
-            Log("If you encounter any bug, (and read this), (~~IDK how to contact the creator~~) see what i posted above in the code, so just contact me: Ruttie#3005 on Discord.");
-            Log("1.5.75 release");
+            Log("If yuw encuwntew any bug, (and wead dis), contact me: Ruttie#3005 on Discowd! >w<");
+            Log("1.5.75 wewease");
         }
+
+
 
         public override List<(string, string)> GetPreloadNames()
         {
-            return new List<(string, string)>();
+            return new List<(string, string)>
+            {
+                ("GG_Grimm", @"Grimm Scene/Grimm Boss")
+            };
         }
 
+        #endregion
+
+
         #region DebugInter
+
         public void DebugInter()
         {
-            Log("Debug is here, changing paths");
+            Log("Debug is hewe, changing paths OwO");
             TitweTexturename = "SiwkNever2.png";
             SpwitePath = ".wesuwwces.SiwkNever2.png";
             ModifyTitweTextuweRuwtine = GameManager.instance.StartCoroutine(HowwowKnyight.ModifyTitweSpwite());
         }
+
         #endregion
 
 
-        #region TitleScreen
-        public static Coroutine ModifyTitweTextuweRuwtine { get; private set; }
-        private static void ActiveSceneChangedHandwer(Scene awg0, LoadSceneMode awg1)
+        #region TextureStuff
+
+        private void Update()
         {
-            if (awg0.name == "Menu_Title")
+            if (unloaded == false) 
+            {
+                while (owiginalgwimm == null) 
+                {
+                    owiginalgwimm = grimm.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture;
+                    if (owiginalgwimm != null)
+                    {
+                        grimm.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = HowwowKnyight.Instance.images["atlas0_213"];
+                    }
+                }
+            }
+            else if (unloaded == true)
+            {
+                Modding.Logger.LogError("Update called while unloaded");
+            }
+        }
+
+        private void SceneChanged(Scene awg0, Scene awg1)
+        {
+            Log("SceneChanged");
+            Log(awg1.name);
+            if (awg1.name == "Menu_Title")
             {
                 if (ModifyTitweTextuweRuwtine == null)
                 {
                     ModifyTitweTextuweRuwtine = GameManager.instance.StartCoroutine(HowwowKnyight.ModifyTitweSpwite());
                 }
             }
-            else if(ModifyTitweTextuweRuwtine != null)
+            else if (ModifyTitweTextuweRuwtine != null)
             {
                 GameManager.instance.StopCoroutine(ModifyTitweTextuweRuwtine);
                 ModifyTitweTextuweRuwtine = null;
             }
+
+            if (awg1.name == "GG_Grimm")
+            {
+                Log("Right scene found");
+                ModHooks.HeroUpdateHook += Update;
+                update = true;
+            }
+            else if (update == true && awg1.name != "GG_Grimm")
+            {
+                ModHooks.HeroUpdateHook -= Update;
+                update = false;
+            }
         }
 
-        static Sprite titweSpwite;
-        static Sprite owiginawTitweSpwite;
-
-        static System.Collections.IEnumerator ModifyTitweSpwite()
+        static IEnumerator ModifyTitweSpwite()
         {
             yield return null;
-            //Debug.Log("HowwowKnyight: ModifyTitweTextuwe");
             while (true)
             {
                 while (owiginawTitweSpwite == null)
@@ -185,27 +316,15 @@ namespace HowwowKnyight
                     owiginawTitweSpwite = GameObject.Find("LogoTitle").GetComponent<SpriteRenderer>().sprite;
                     if (owiginawTitweSpwite != null)
                     {
-                        //Debug.Log("HowwowKnyight: ModifyTitweTextuwe -- owiginal textuwe acquiwed");
-                        //Debug.Log("HowwowKnyight: " + owiginawTitweSpwite.rect);
-                        //Debug.Log("HowwowKnyight: " + owiginawTitweSpwite.textureRect);
-                        //Debug.Log("HowwowKnyight: " + owiginawTitweSpwite.pixelsPerUnit);
-                        //Debug.Log("HowwowKnyight: " + owiginawTitweSpwite.texture.width);
                         Texture2D titweTextuwe = new Texture2D(1, 1);
                         using (Stream stweam = Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(HowwowKnyight).Namespace + SpwitePath))
-                        //using (Stream stweam = Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(HowwowKnyight).Namespace + ".wesuwwces.SpriteAtlasTexture-Title-2048x2048-fmt12.png"))
                         {
                             byte[] buffew = new byte[stweam.Length];
                             stweam.Read(buffew, 0, buffew.Length);
                             titweTextuwe.LoadImage(buffew, false);
-                            //titweTextuwe.name = "SpriteAtlasTexture-Title-2048x2048-fmt12";
                             titweTextuwe.name = TitweTexturename;
                         }
                         titweSpwite = Sprite.Create(titweTextuwe, new Rect(0, 0, titweTextuwe.width, titweTextuwe.height), new Vector2(0.5f, 0.5f), owiginawTitweSpwite.pixelsPerUnit, 0, SpriteMeshType.FullRect);
-                        //Debug.Log("HowwowKnyight: ModifyTitweTextuwe -- new textuwe genewated");
-                        //Debug.Log("HowwowKnyight: " + titweSpwite.rect);
-                        //Debug.Log("HowwowKnyight: " + titweSpwite.textureRect);
-                        //Debug.Log("HowwowKnyight: " + titweSpwite.pixelsPerUnit);
-                        //Debug.Log("HowwowKnyight: " + titweSpwite.texture.width);
                     }
                     yield return null;
                 }
@@ -213,26 +332,42 @@ namespace HowwowKnyight
                 yield return null;
             }
         }
+
         #endregion
 
 
         #region WanguageGet
+
         private string WanguageGet(string key, string instance, string owig)
         {
-            Regex r = new Regex(@"\d", RegexOptions.IgnoreCase); //i hope this works SFG
+            bool FyremothHere = false;
+            foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                string asmName = asm.GetName().Name;
+                //Modding.Logger.Log(asmName);
+                if (asmName == "Fyremoth")
+                {
+                    FyremothHere = true;
+                }
+            }
+            if (key == "GRIMM_SUPER" && owig == "Troupe Master" && FyremothHere == false)
+            {
+                owig = "OwO Mastew";
+                return (owig);
+            }
+            if (owig == "Uumuu" && FyremothHere == false)
+            {
+                owig = "Uuwuu";
+                return owig;
+            }
+            Regex r = new Regex(@"\d", RegexOptions.IgnoreCase); //I hope dis wowks SFG
             MatchCollection matches = r.Matches(owig);
             if (matches.Count > 0)
             {
-                //Modding.Logger.Log("Theres a number here!");
-                //Debug.Log("Theres a number here!");
-                //No longer needed, it worked! OwO
                 return (owig);
             }
             else
             {
-                //Modding.Logger.Log("Found something usefull");
-                //Debug.Log("Found something usefull");
-                //Sorry everyone in modding-development for me being dumb and using the worng dll!
                 try
                 {
                     return UWUfyStwing(PwepwocessDiawoge(owig));
@@ -244,52 +379,18 @@ namespace HowwowKnyight
                 }
             }
         }
+
         
-        public delegate string WanguageGetWef(ModHooks instance, string key, string tabwe);
-
-
-        #region OldStuff
-        /*private string WanguageGet((string key, string sheetTitle, string owig))
-        {
-            string text = owig(instance, key, tabwe);
-            Regex r = new Regex(@"\d", RegexOptions.IgnoreCase); //i hope this works SFG
-            MatchCollection matches = r.Matches(text);
-            if (matches.Count > 0)
-            {
-                //Modding.Logger.Log("Theres a number here!");
-                //Debug.Log("Theres a number here!");
-                //No longer needed, it worked! OwO
-                return (text);
-            }
-            else
-            {
-                //Modding.Logger.Log("Found something usefull");
-                //Debug.Log("Found something usefull");
-                //Sorry everyone in modding-development for me being dumb and using the worng dll!
-                try
-                {
-                    return UWUfyStwing(PwepwocessDiawoge(text));
-                }
-                catch
-                {
-                    Modding.Logger.Log("Something terrible has happened! Please contact me with this info!");
-                    return (text);
-                }
-            }
-        }*/
-        //This does not exist, OK?
-        #endregion
-
         #endregion
 
 
         #region Unload
+
         public void Unload()
         {
             Log("Unwoad UwU");
             try
             {
-
                 if (wanguageGetHook != null)
                 {
                     wanguageGetHook.Dispose();
@@ -302,36 +403,52 @@ namespace HowwowKnyight
                     enyabwed = false;
                 }
 
-                UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HowwowKnyight.ActiveSceneChangedHandwer;
+                UnityEngine.SceneManagement.SceneManager.activeSceneChanged -= SceneChanged;
+                ModHooks.HeroUpdateHook -= Update;
+
+                WestoweGwimm();
+
                 if (ModifyTitweTextuweRuwtine != null)
                 {
                     GameManager.instance.StopCoroutine(ModifyTitweTextuweRuwtine);
                     ModifyTitweTextuweRuwtine = null;
                 }
-                WestoweTitweTextuwe();
 
+                WestoweTitweTextuwe();
                 Log("Done unwoading UwU");
+
+                unloaded = true;
             }
             catch
             {
-                Log("It seems like unloading has failed! Please let me know!");
+                Log("It seems wike unwoading has faiwed! Pwease wet me knyow! >w<");
             }
         }
 
         static void WestoweTitweTextuwe()
         {
-            //Debug.Log("HowwowKnyight: WestoweTitweTextuwe");
             if (owiginawTitweSpwite == null)
             {
-                //Debug.Log("HowwowKnyight: WestoweTitweTextuwe - nofing to westowe");
                 return;
             }
             GameObject.Find("LogoTitle").GetComponent<SpriteRenderer>().sprite = owiginawTitweSpwite;
         }
+
+        static void WestoweGwimm()
+        {
+            if (owiginalgwimm == null)
+            {
+                return;
+            }
+            Instance.grimm.GetComponent<tk2dSprite>().GetCurrentSpriteDef().material.mainTexture = owiginalgwimm;
+        }
+
         #endregion
 
 
         #region OwO-ify
+
+        #region Dictionaries
         private static readonly Dictionary<string, string> uwu_simpwe = new Dictionary<string, string>()
         {
             { @"R", @"W" },
@@ -360,10 +477,11 @@ namespace HowwowKnyight
             { @"Ove\b", @"Uv" },
             { @"ove\b", @"uv" },
         };
+        #endregion
 
         public static string UWUfyStwing(string owig)
         {
-            //Debug.Log("uwufying: " + owig + " -> " + uwu_simpwe.Aggregate(uwu_wegex.Aggregate(owig, (current, value) => Regex.Replace(current, value.Key, value.Value)), (current, value) => current.Replace(value.Key, value.Value)));
+
             return uwu_simpwe.Aggregate(uwu_wegex.Aggregate(owig, (cuwwent, vawue) => Regex.Replace(cuwwent, vawue.Key, vawue.Value)), (cuwwent, vawue) => cuwwent.Replace(vawue.Key, vawue.Value));
         }
 
@@ -407,37 +525,16 @@ namespace HowwowKnyight
             if (owig.EndsWith("?") || (!hasFace && UnityEngine.Random.value < 0.2f))
             {
                 owig = owig.TrimEnd(sepawatows);
-                switch (UnityEngine.Random.Range(0, 10))
-                {
-                    case 0:
-                        owig += " uwu";
-                        break;
-                    case 1:
-                        owig += " owo";
-                        break;
-                    case 2:
-                        owig += " UwU";
-                        break;
-                    case 3:
-                        owig += " OwO";
-                        break;
-                    case 4:
-                        owig += " >w<";
-                        break;
-                    case 5:
-                        owig += " ^w^";
-                        break;
-                    case 6:
-                    case 7:
-                        owig += " UwU";
-                        break;
-                    default:
-                        owig += "~";
-                        break;
-                }
+                GlobalSettingsClass howwowKnyightSettings = new GlobalSettingsClass();
+                owig += howwowKnyightSettings.OwO[UnityEngine.Random.Range(0, (howwowKnyightSettings.OwO.Count - 1))];
             }
             return owig;
         }
+
         #endregion
     }
 }
+
+#endregion
+
+#endregion
