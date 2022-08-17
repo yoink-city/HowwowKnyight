@@ -39,28 +39,29 @@ namespace HowwowKnyight
         GameObject GrimmGO { get; set; } = null!;
         bool Unloaded;
         bool enyabwed = false;
-        OWOtils? Utils;
+        readonly OWOtils? Utils = new();
 
         public void OnLoadGlobal(GlobalSettingsClass s)
         {
-            Modding.Logger.Log("loading globalsettings");
             Settings = s;
-            Utils = new(Settings.Flags)
+            if (Utils == null)
             {
-                Seperators = Settings.Seperators,
-                UWUFaces = Settings.UWUFaces,
-                UWURegexDict = Settings.UWURegexDict,
-                UWUSimpleDict = Settings.UWUSimpleDict
-            };
+                Log($"{nameof(Utils)} should not be null.");
+                return;
+            }
+            Utils.Flags = Settings.Flags;
+            Utils.Seperators = Settings.Seperators;
+            Utils.UWUFaces = Settings.UWUFaces;
+            Utils.UWURegexDict = Settings.UWURegexDict;
+            Utils.UWUSimpleDict = Settings.UWUSimpleDict;
         }
 
         public GlobalSettingsClass OnSaveGlobal()
         {
-            Modding.Logger.Log("saving globalsettings");
             return Settings;
         }
 
-        HowwowKnyight() : base("HowwowKnyight")
+        public HowwowKnyight() : base("HowwowKnyight")
         {
             Log("HowwowKnyight pre-init startup.");
             if (!enyabwed)
@@ -85,6 +86,9 @@ namespace HowwowKnyight
                 ModHooks.LanguageGetHook += WanguageGet;
                 enyabwed = true;
             }
+
+            if (Utils?.Flags == OWOFlags.None)
+                LogWarn("Warning: Flags value is set to 0. This will result in the mod not changing any text. Set this value to 117 if this was a mistake.");
 
             UnityEngine.SceneManagement.SceneManager.activeSceneChanged += SceneChanged;
             GrimmGO = preloadedObjects["GG_Grimm"][@"Grimm Scene/Grimm Boss"];
@@ -229,7 +233,7 @@ namespace HowwowKnyight
             if (Unloaded)
                 return owig;
 
-            bool FyremothHere = ModHooks.GetMod("Fyremoth", true) != null;
+            var FyremothHere = ModHooks.GetMod("Fyremoth", true) != null;
 
             if (key == "GRIMM_SUPER" && owig == "Troupe Master" && !FyremothHere)
                 return "OwO Mastew";
@@ -243,7 +247,7 @@ namespace HowwowKnyight
             {
                 try
                 {
-                    return Utils?.OWOifyString(owig) ?? owig;
+                    return Utils?.OWOifyString(owig) ?? throw new ArgumentNullException(nameof(Utils));
                 }
                 catch (Exception ex)
                 {

@@ -53,7 +53,7 @@ namespace HowwowKnyight.GlobalSettings
                 ' '
             };
 
-        public HowwowKnyight.OWOFlags Flags { get; set; }
+        public HowwowKnyight.OWOFlags Flags { get; set; } = HowwowKnyight.OWOFlags.All;
     }
 }
 //This does not work fully yet, needs to be fixed. I have no idea how sadly
